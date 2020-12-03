@@ -1,6 +1,6 @@
 PROG = client
 CPPFLAGS += -I.
-CFLAGS = -g -O2 -Wall
+CFLAGS = -g -O2 -Wall -std=gnu99
 
 all: $(PROG)
 
