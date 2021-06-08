@@ -32,7 +32,7 @@ int print_result(struct timeval start, struct timeval stop, int so_snd_buf, unsi
     return 0;
 }
 
-int child_proc(int connfd, int bufsize, int sleep_usec)
+int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
 {
     int n;
     unsigned char *buf;
@@ -84,6 +84,17 @@ int child_proc(int connfd, int bufsize, int sleep_usec)
         if (sleep_usec > 0) {
             bz_usleep(sleep_usec);
         }
+        if (rate > 0) {
+            struct timeval now, elapsed;
+            // calculate sleep sec
+            gettimeofday(&now, NULL);
+            timersub(&now, &start, &elapsed);
+            double delta_t_sec = (double) send_bytes / (double) rate - (double) elapsed.tv_sec - (double) 0.000001*elapsed.tv_usec ;
+            if (delta_t_sec > 0.0) {
+                int sleep_usec = (int) (delta_t_sec * 1000000.0);
+                usleep(sleep_usec);
+            }
+        }
     }
     return 0;
 }
@@ -102,11 +113,12 @@ void sig_chld(int signo)
 int usage(void)
 {
     char *msg =
-"Usage: server [-b bufsize (1460)] [-s sleep_usec (0)] [-q] [-S so_sndbuf]\n"
+"Usage: server [-b bufsize (1460)] [-s sleep_usec (0)] [-q] [-r rate] [-S so_sndbuf]\n"
 "-b bufsize:    one send size (may add k for kilo, m for mega)\n"
 "-s sleep_usec: sleep useconds after write\n"
 "-p port:       port number (1234)\n"
 "-q:            enable quick ack\n"
+"-r rate:       data send rate (bytes/sec).  k for kilo, m for mega\n"
 "-S: so_sndbuf: set socket send buffer size\n";
 
     fprintf(stderr, msg);
@@ -124,8 +136,9 @@ int main(int argc, char *argv[])
     int c;
     int bufsize = 1460;
     int sleep_usec = 0;
+    int rate = 0;
 
-    while ( (c = getopt(argc, argv, "b:dhp:qs:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:dhp:qr:s:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
@@ -141,6 +154,9 @@ int main(int argc, char *argv[])
                 break;
             case 'q':
                 enable_quick_ack = 1;
+                break;
+            case 'r':
+                rate = get_num(optarg);
                 break;
             case 's':
                 sleep_usec = get_num(optarg);
@@ -174,7 +190,7 @@ int main(int argc, char *argv[])
             if (close(listenfd) < 0) {
                 err(1, "close listenfd");
             }
-            if (child_proc(connfd, bufsize, sleep_usec) < 0) {
+            if (child_proc(connfd, bufsize, sleep_usec, rate) < 0) {
                 errx(1, "child_proc");
             }
             exit(0);
