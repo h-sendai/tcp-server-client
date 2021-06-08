@@ -106,6 +106,7 @@ int usage(void)
 "Usage: server [-b bufsize (1460)] [-s sleep_usec (0)] [-q] [-S so_sndbuf]\n"
 "-b bufsize:    one send size (may add k for kilo, m for mega)\n"
 "-s sleep_usec: sleep useconds after write\n"
+"-p port:       port number (1234)\n"
 "-q:            enable quick ack\n"
 "-S: so_sndbuf: set socket send buffer size\n";
 
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
     int bufsize = 1460;
     int sleep_usec = 0;
 
-    while ( (c = getopt(argc, argv, "b:dhqs:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:dhp:qs:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
@@ -136,6 +137,9 @@ int main(int argc, char *argv[])
             case 'h':
                 usage();
                 exit(0);
+            case 'p':
+                port = strtol(optarg, NULL, 0);
+                break;
             case 'q':
                 enable_quick_ack = 1;
                 break;
