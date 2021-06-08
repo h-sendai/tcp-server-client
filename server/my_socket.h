@@ -34,5 +34,11 @@ extern int set_so_rcvbuf(int sockfd, int so_rcvbuf);
 extern int get_so_sndbuf(int sockfd);
 extern int set_so_sndbuf(int sockfd, int so_sndbuf);
 extern int set_so_nodelay(int sockfd);
+extern int get_so_rcvlowat(int sockfd);
+extern int set_so_rcvlowat(int sockfd, int lowat);
 
+extern int tcp_listen(int port);
+extern int accept_connection(int port);
+
+extern int get_port_num(int sockfd);
 #endif

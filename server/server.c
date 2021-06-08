@@ -9,7 +9,6 @@
 
 #include "my_signal.h"
 #include "my_socket.h"
-#include "accept_connection.h"
 #include "get_num.h"
 #include "bz_usleep.h"
 #include "logUtil.h"
