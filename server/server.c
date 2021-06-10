@@ -16,6 +16,7 @@
 int debug = 0;
 int enable_quick_ack = 0;
 int set_so_sndbuf_size = 0;
+volatile sig_atomic_t has_usr1 = 0;
 
 int print_result(struct timeval start, struct timeval stop, int so_snd_buf, unsigned long long send_bytes)
 {
@@ -30,6 +31,12 @@ int print_result(struct timeval start, struct timeval stop, int so_snd_buf, unsi
         send_bytes, diff.tv_sec, diff.tv_usec);
 
     return 0;
+}
+
+void sig_usr1()
+{
+    has_usr1 = 1;
+    return;
 }
 
 int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
@@ -48,11 +55,18 @@ int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
         set_so_sndbuf(connfd, set_so_sndbuf_size);
     }
 
+    pid_t pid = getpid();
+    fprintfwt(stderr, "server: pid: %d\n", pid);
     int so_snd_buf = get_so_sndbuf(connfd);
     fprintfwt(stderr, "server: SO_SNDBUF: %d (init)\n", so_snd_buf);
 
+    my_signal(SIGUSR1, sig_usr1);
     gettimeofday(&start, NULL);
     for ( ; ; ) {
+        if (has_usr1) {
+            has_usr1 = 0;
+            sleep(5);
+        }
         if (enable_quick_ack) {
             int qack = 1;
             setsockopt(connfd, IPPROTO_TCP, TCP_QUICKACK, &qack, sizeof(qack));
