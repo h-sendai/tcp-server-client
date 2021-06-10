@@ -66,6 +66,18 @@ int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
         if (has_usr1) {
             has_usr1 = 0;
             sleep(5);
+            if (rate > 0) {
+                /*
+                 * XXX 
+                 * reset start time and send_bytes to send
+                 * in rate after resume.
+                 * if rate is specified and data sending suspend,
+                 * the final result in bytes and transfer rate
+                 * will be invalid values
+                 */
+                gettimeofday(&start, NULL);
+                send_bytes = 0;
+            }
         }
         if (enable_quick_ack) {
             int qack = 1;
