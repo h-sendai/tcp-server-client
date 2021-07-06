@@ -39,7 +39,7 @@ void sig_usr1()
     return;
 }
 
-int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
+int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_resume_sec)
 {
     int n;
     unsigned char *buf;
@@ -65,7 +65,7 @@ int child_proc(int connfd, int bufsize, int sleep_usec, int rate)
     for ( ; ; ) {
         if (has_usr1) {
             has_usr1 = 0;
-            sleep(5);
+            sleep(sleep_to_resume_sec);
             if (rate > 0) {
                 /*
                  * XXX 
@@ -145,7 +145,8 @@ int usage(void)
 "-p port:       port number (1234)\n"
 "-q:            enable quick ack\n"
 "-r rate:       data send rate (bytes/sec).  k for kilo, m for mega\n"
-"-S: so_sndbuf: set socket send buffer size\n";
+"-S so_sndbuf:  set socket send buffer size\n"
+"-R sleep_sec:  sleep_sec after receive SIGUSR1\n";
 
     fprintf(stderr, msg);
 
@@ -163,8 +164,9 @@ int main(int argc, char *argv[])
     int bufsize = 1460;
     int sleep_usec = 0;
     int rate = 0;
+    int sleep_to_resume_sec = 5;
 
-    while ( (c = getopt(argc, argv, "b:dhp:qr:s:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:dhp:qr:R:s:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
@@ -189,6 +191,9 @@ int main(int argc, char *argv[])
                 break;
             case 'S':
                 set_so_sndbuf_size = get_num(optarg);
+                break;
+            case 'R':
+                sleep_to_resume_sec = strtol(optarg, NULL, 0);
                 break;
             default:
                 break;
@@ -216,7 +221,7 @@ int main(int argc, char *argv[])
             if (close(listenfd) < 0) {
                 err(1, "close listenfd");
             }
-            if (child_proc(connfd, bufsize, sleep_usec, rate) < 0) {
+            if (child_proc(connfd, bufsize, sleep_usec, rate, sleep_to_resume_sec) < 0) {
                 errx(1, "child_proc");
             }
             exit(0);
