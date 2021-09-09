@@ -80,8 +80,10 @@ int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_r
             }
         }
         if (enable_quick_ack) {
+#ifdef __linux__
             int qack = 1;
             setsockopt(connfd, IPPROTO_TCP, TCP_QUICKACK, &qack, sizeof(qack));
+#endif
         }
         n = write(connfd, buf, bufsize);
         if (n < 0) {
@@ -148,7 +150,7 @@ int usage(void)
 "-S so_sndbuf:  set socket send buffer size\n"
 "-R sleep_sec:  sleep_sec after receive SIGUSR1\n";
 
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s", msg);
 
     return 0;
 }

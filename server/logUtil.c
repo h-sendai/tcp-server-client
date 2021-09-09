@@ -37,7 +37,7 @@ int fprintfwt(FILE *pFILE,const char *fmt,...)
 	 		//	1900+pTm->tm_year,pTm->tm_mon+1,pTm->tm_mday,
  			//pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
             nRET += fprintf(pFILE, "%s.%06ld ", timestamp_buf, tv.tv_usec);
-			nRET += fprintf(pFILE,buff);
+			nRET += fprintf(pFILE, "%s", buff);
 		}
 	}
 	return nRET;
