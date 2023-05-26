@@ -36,6 +36,7 @@ int usage()
                  "-s SLEEP_USEC   sleep between each read() (default: don't sleep)\n"
                  "-t SECONDS      running period (default: 10 seconds)\n"
                  "-d              debug\n"
+                 "-L LOWAT        Set LOWAT on socket.  Implies use read() (not readn)\n"
                  "-h              display this help\n";
 
     fprintf(stderr, "%s", msg);
@@ -75,8 +76,9 @@ int main(int argc, char *argv[])
     int set_so_rcvbuf_size = 0;
     bufsize = 1460;
     int cpu_num = -1;
+    int lowat_size = -1;
 
-    while ( (c = getopt(argc, argv, "b:c:dhp:r:s:t:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:c:dhp:r:s:t:L:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
@@ -102,6 +104,9 @@ int main(int argc, char *argv[])
                 break;
             case 't':
                 run_sec = get_num(optarg);
+                break;
+            case 'L':
+                lowat_size = get_num(optarg);
                 break;
             default:
                 break;
@@ -138,13 +143,23 @@ int main(int argc, char *argv[])
     int rcvbuf = get_so_rcvbuf(sockfd);
     fprintfwt(stderr, "client: SO_RCVBUF: %d (init)\n", rcvbuf);
 
+    if (set_so_rcvlowat(sockfd, lowat_size) < 0) {
+          errx(1, "set_so_rcvlowat");
+    }
+
     if (connect_tcp(sockfd, remote, port) < 0) {
         errx(1, "connect_tcp");
     }
     
     gettimeofday(&begin, NULL);
     for ( ; ; ) {
-        n = readn(sockfd, buf, bufsize);
+        if (lowat_size > 0) {
+            n = read(sockfd, buf, bufsize);
+        }
+        else {
+            n = readn(sockfd, buf, bufsize);
+        }
+
         so_far_bytes += n;
         if (n < 0) {
             err(1, "read");
@@ -153,6 +168,7 @@ int main(int argc, char *argv[])
             bz_usleep(sleep_usec);
         }
         if (debug) {
+            fprintf(stderr, "read(n) return: %d bytes\n", n);
             struct timeval tv;
             gettimeofday(&tv, NULL);
             fprintf(stderr, "%ld.%06ld read %d bytes\n", tv.tv_sec, tv.tv_usec, n);
