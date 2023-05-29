@@ -12,6 +12,7 @@
 #include "get_num.h"
 #include "bz_usleep.h"
 #include "logUtil.h"
+#include "set_cpu.h"
 
 int debug = 0;
 int enable_quick_ack = 0;
@@ -39,7 +40,7 @@ void sig_usr1()
     return;
 }
 
-int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_resume_sec)
+int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_resume_sec, int run_cpu)
 {
     int n;
     unsigned char *buf;
@@ -59,6 +60,12 @@ int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_r
     fprintfwt(stderr, "server: pid: %d\n", pid);
     int so_snd_buf = get_so_sndbuf(connfd);
     fprintfwt(stderr, "server: SO_SNDBUF: %d (init)\n", so_snd_buf);
+
+    if (run_cpu != -1) {
+        if (set_cpu(run_cpu) < 0) {
+            errx(1, "set_cpu");
+        }
+    }
 
     my_signal(SIGUSR1, sig_usr1);
     gettimeofday(&start, NULL);
@@ -148,7 +155,8 @@ int usage(void)
 "-q:            enable quick ack\n"
 "-r rate:       data send rate (bytes/sec).  k for kilo, m for mega\n"
 "-S so_sndbuf:  set socket send buffer size\n"
-"-R sleep_sec:  sleep_sec after receive SIGUSR1\n";
+"-R sleep_sec:  sleep_sec after receive SIGUSR1\n"
+"-c run_cpu:    specify server run cpu (in child proc)\n";
 
     fprintf(stderr, "%s", msg);
 
@@ -167,11 +175,15 @@ int main(int argc, char *argv[])
     int sleep_usec = 0;
     int rate = 0;
     int sleep_to_resume_sec = 5;
+    int run_cpu = -1;
 
-    while ( (c = getopt(argc, argv, "b:dhp:qr:R:s:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:c:dhp:qr:R:s:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
+                break;
+            case 'c':
+                run_cpu = strtol(optarg, NULL, 0);
                 break;
             case 'd':
                 debug += 1;
@@ -223,7 +235,7 @@ int main(int argc, char *argv[])
             if (close(listenfd) < 0) {
                 err(1, "close listenfd");
             }
-            if (child_proc(connfd, bufsize, sleep_usec, rate, sleep_to_resume_sec) < 0) {
+            if (child_proc(connfd, bufsize, sleep_usec, rate, sleep_to_resume_sec, run_cpu) < 0) {
                 errx(1, "child_proc");
             }
             exit(0);

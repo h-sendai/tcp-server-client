@@ -13,6 +13,7 @@ OBJS += set_timer.o
 OBJS += get_timestamp_us.o
 OBJS += bz_usleep.o
 OBJS += logUtil.o
+OBJS += set_cpu.o
 
 OBJS += $(PROG).o
 
