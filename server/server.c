@@ -40,7 +40,7 @@ void sig_usr1()
     return;
 }
 
-int child_proc(int connfd, int bufsize, int sleep_usec, int rate, int sleep_to_resume_sec, int run_cpu)
+int child_proc(int connfd, int bufsize, int sleep_usec, long rate, int sleep_to_resume_sec, int run_cpu)
 {
     int n;
     unsigned char *buf;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     int c;
     int bufsize = 1460;
     int sleep_usec = 0;
-    int rate = 0;
+    long rate = 0;
     int sleep_to_resume_sec = 5;
     int run_cpu = -1;
 
