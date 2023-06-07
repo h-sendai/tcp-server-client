@@ -117,3 +117,75 @@ erange:
 	}
 	return (num);
 }
+
+/* static uintmax_t */
+uintmax_t get_num_10(const char *val)
+{
+	uintmax_t num, mult, prevnum;
+	char *expr;
+
+	errno = 0;
+	num = strtouq(val, &expr, 0);
+	if (errno != 0)				/* Overflow or underflow. */
+		err(1, "overflow or underflow");
+		//err(1, "%s", oper);
+	
+	if (expr == val)			/* No valid digits. */
+		errx(1, "illegal numeric value");
+		//errx(1, "%s: illegal numeric value", oper);
+
+	mult = 0;
+	switch (*expr) {
+	case 'B':
+	case 'b':
+		mult = 512;
+		break;
+	case 'K':
+	case 'k':
+		mult = 1000;
+		break;
+	case 'M':
+	case 'm':
+		mult = 1000000;
+		break;
+	case 'G':
+	case 'g':
+		mult = 1000000000;
+		break;
+	case 'W':
+	case 'w':
+		mult = sizeof(int);
+		break;
+	default:
+		;
+	}
+
+	if (mult != 0) {
+		prevnum = num;
+		num *= mult;
+		/* Check for overflow. */
+		if (num / mult != prevnum)
+			goto erange;
+		expr++;
+	}
+
+	switch (*expr) {
+		case '\0':
+			break;
+		case '*':			/* Backward compatible. */
+		case 'X':
+		case 'x':
+			mult = get_num(expr + 1);
+			prevnum = num;
+			num *= mult;
+			if (num / mult == prevnum)
+				break;
+erange:
+			errx(1, "%s", strerror(ERANGE));
+			//errx(1, "%s: %s", oper, strerror(ERANGE));
+		default:
+			errx(1, "illegal numeric value");
+			//errx(1, "%s: illegal numeric value", oper);
+	}
+	return (num);
+}

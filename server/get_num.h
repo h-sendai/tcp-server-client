@@ -9,5 +9,6 @@
 #include <stdlib.h>
 
 extern uintmax_t get_num(const char *val);
+extern uintmax_t get_num_10(const char *val);
 
 #endif

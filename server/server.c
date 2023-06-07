@@ -154,6 +154,7 @@ int usage(void)
 "-p port:       port number (1234)\n"
 "-q:            enable quick ack\n"
 "-r rate:       data send rate (bytes/sec).  k for kilo, m for mega\n"
+"-B rate:       data send rate (bits/sec).  k for kilo, m for mega\n"
 "-S so_sndbuf:  set socket send buffer size\n"
 "-R sleep_sec:  sleep_sec after receive SIGUSR1\n"
 "-c run_cpu:    specify server run cpu (in child proc)\n";
@@ -177,10 +178,14 @@ int main(int argc, char *argv[])
     int sleep_to_resume_sec = 5;
     int run_cpu = -1;
 
-    while ( (c = getopt(argc, argv, "b:c:dhp:qr:R:s:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:B:c:dhp:qr:R:s:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
+                break;
+            case 'B':
+                rate = get_num_10(optarg);
+                rate = rate / 8;
                 break;
             case 'c':
                 run_cpu = strtol(optarg, NULL, 0);
