@@ -40,7 +40,7 @@ void sig_usr1()
     return;
 }
 
-int child_proc(int connfd, int bufsize, int sleep_usec, long rate, int sleep_to_resume_sec, int run_cpu)
+int child_proc(int connfd, int bufsize, int sleep_usec, long rate, int sleep_to_resume_sec, int run_cpu, int use_no_delay)
 {
     int n;
     unsigned char *buf;
@@ -54,6 +54,11 @@ int child_proc(int connfd, int bufsize, int sleep_usec, long rate, int sleep_to_
 
     if (set_so_sndbuf_size > 0) {
         set_so_sndbuf(connfd, set_so_sndbuf_size);
+    }
+
+    if (use_no_delay) {
+        fprintfwt(stderr, "use_no_delay\n");
+        set_so_nodelay(connfd);
     }
 
     pid_t pid = getpid();
@@ -157,7 +162,8 @@ int usage(void)
 "-B rate:       data send rate (bits/sec).  k for kilo, m for mega\n"
 "-S so_sndbuf:  set socket send buffer size\n"
 "-R sleep_sec:  sleep_sec after receive SIGUSR1\n"
-"-c run_cpu:    specify server run cpu (in child proc)\n";
+"-c run_cpu:    specify server run cpu (in child proc)\n"
+"-D:            use TCP_NODELAY socket option\n";
 
     fprintf(stderr, "%s", msg);
 
@@ -177,8 +183,9 @@ int main(int argc, char *argv[])
     long rate = 0;
     int sleep_to_resume_sec = 5;
     int run_cpu = -1;
+    int use_no_delay = -1;
 
-    while ( (c = getopt(argc, argv, "b:B:c:dhp:qr:R:s:S:")) != -1) {
+    while ( (c = getopt(argc, argv, "b:B:c:dDhp:qr:R:s:S:")) != -1) {
         switch (c) {
             case 'b':
                 bufsize = get_num(optarg);
@@ -192,6 +199,9 @@ int main(int argc, char *argv[])
                 break;
             case 'd':
                 debug += 1;
+                break;
+            case 'D':
+                use_no_delay = 1;
                 break;
             case 'h':
                 usage();
@@ -240,7 +250,7 @@ int main(int argc, char *argv[])
             if (close(listenfd) < 0) {
                 err(1, "close listenfd");
             }
-            if (child_proc(connfd, bufsize, sleep_usec, rate, sleep_to_resume_sec, run_cpu) < 0) {
+            if (child_proc(connfd, bufsize, sleep_usec, rate, sleep_to_resume_sec, run_cpu, use_no_delay) < 0) {
                 errx(1, "child_proc");
             }
             exit(0);
