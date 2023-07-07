@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     long rate = 0;
     int sleep_to_resume_sec = 5;
     int run_cpu = -1;
-    int use_no_delay = -1;
+    int use_no_delay = 0;
 
     while ( (c = getopt(argc, argv, "b:B:c:dDhp:qr:R:s:S:")) != -1) {
         switch (c) {
