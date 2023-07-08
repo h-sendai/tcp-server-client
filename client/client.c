@@ -143,8 +143,10 @@ int main(int argc, char *argv[])
     int rcvbuf = get_so_rcvbuf(sockfd);
     fprintfwt(stderr, "client: SO_RCVBUF: %d (init)\n", rcvbuf);
 
-    if (set_so_rcvlowat(sockfd, lowat_size) < 0) {
-          errx(1, "set_so_rcvlowat");
+    if (lowat_size > 0) {
+        if (set_so_rcvlowat(sockfd, lowat_size) < 0) {
+            errx(1, "set_so_rcvlowat");
+        }
     }
 
     if (connect_tcp(sockfd, remote, port) < 0) {
