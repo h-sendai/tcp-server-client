@@ -274,11 +274,24 @@ int set_so_nodelay(int sockfd)
 }
 
 #ifdef __linux__
-int set_so_quickack(int sockfd)
+int get_so_quickack(int sockfd)
 {
-    int on = 1;
-    if (setsockopt(sockfd, IPPROTO_TCP, TCP_QUICKACK , &on, sizeof(on)) < 0) {
-        warn("setsockopt quickack");
+    int value;
+    socklen_t len = sizeof(value);
+
+    if (getsockopt(sockfd, IPPROTO_TCP, TCP_QUICKACK , &value, &len) < 0) {
+        warn("getsockopt quickack");
+        return -1;
+    }
+
+    return value;
+}
+
+int set_so_quickack(int sockfd, int on_off)
+{
+    int value = on_off;
+    if (setsockopt(sockfd, IPPROTO_TCP, TCP_QUICKACK , &value, sizeof(value)) < 0) {
+        warn("setsockopt quickack: value: %d", value);
         return -1;
     }
 
@@ -289,7 +302,7 @@ int set_so_quickack(int sockfd)
 int get_so_rcvlowat(int sockfd)
 {
     int size;
-    socklen_t len;
+    socklen_t len = sizeof(size);
 
     if (getsockopt(sockfd, SOL_SOCKET, SO_RCVLOWAT , &size, &len) < 0) {
         warn("getsockopt so_rcvlowat");
@@ -391,3 +404,34 @@ int set_so_rcvtimeout(int sockfd, long tv_sec, long tv_usec)
     return 0;
 }
 
+int get_tcp_info(int sockfd, struct tcp_info *my_tcp_info)
+{
+    socklen_t tcp_info_size = sizeof(struct tcp_info);
+    if (getsockopt(sockfd, IPPROTO_TCP, TCP_INFO, my_tcp_info, &tcp_info_size) < 0) {
+        warn("getsockopt TCP_INFO");
+        return -1;
+    }
+
+    return 0;
+}
+
+struct sockaddr_in get_sockaddr_in(char *host, char *port, int sock_type)
+{
+    struct addrinfo hints, *result;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = sock_type;
+    hints.ai_flags    = 0;
+    hints.ai_protocol = 0;
+
+    int s = getaddrinfo(host, port, &hints, &result);
+    if (s != 0) {
+        errx(1, "getaddrinfo: %s", gai_strerror(s));
+    }
+
+    struct sockaddr_in addr = *(struct sockaddr_in*)(result->ai_addr);
+
+    freeaddrinfo(result);
+
+    return addr;
+}

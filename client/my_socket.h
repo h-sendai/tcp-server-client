@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/uio.h>     /* for iovec{} and readv/writev */
+#include <sys/ioctl.h>
 
 #include <arpa/inet.h>   /* inet(3) functions */
 #include <netinet/in.h>  /* sockaddr_in{} and other Internet defns */
@@ -33,12 +34,26 @@ extern int get_so_rcvbuf(int sockfd);
 extern int set_so_rcvbuf(int sockfd, int so_rcvbuf);
 extern int get_so_sndbuf(int sockfd);
 extern int set_so_sndbuf(int sockfd, int so_sndbuf);
+extern int get_bytes_in_rcvbuf(int sockfd);
 extern int set_so_nodelay(int sockfd);
+#ifdef __linux__
+extern int set_so_quickack(int sockfd, int on_off);
+#endif
 extern int get_so_rcvlowat(int sockfd);
 extern int set_so_rcvlowat(int sockfd, int lowat);
+extern int set_so_rcvtimeout(int sockfd, long tv_sec, long tv_usec);
+
+/* See /usr/include/linux/tcp.h on members of tcp_info */
+/* API include file is <netinet/tcp.h> */
+extern int get_tcp_info(int sockfd, struct tcp_info *my_tcp_info);
 
 extern int tcp_listen(int port);
 extern int accept_connection(int port);
 
 extern int get_port_num(int sockfd);
+/* convert MiB (1024 base) to Giga (1000 base) bit */
+extern double MiB2Gb(double x);
+
+/* sock_type: SOCK_STREAM, SOCK_DGRAM etc. */
+extern struct sockaddr_in get_sockaddr_in(char *host, char *port, int sock_type);
 #endif
